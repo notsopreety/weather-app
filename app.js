@@ -123,15 +123,56 @@ const aiSummaryText = document.getElementById('ai-summary-text');
 const aiTypingIndicator = document.getElementById('ai-typing-indicator');
 
 // Simple Markdown to HTML converter
-function markdownToHtml(text) {
-    let html = text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-        .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-        .replace(/^- (.*)$/gm, '<li>$1</li>') // Bullets
-        .replace(/\n/g, '<br>'); // Line breaks
-    
-    // Wrap bullet lists in <ul> tags
-    html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+function markdownToHtml(markdown) {
+    // Escape HTML characters
+    let html = markdown.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Code blocks (``` code ```)
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+    // Inline code (`code`)
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Headings
+    html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+
+    // Bold and Italic
+    html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>'); // Bold + Italic
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
+    html = html.replace(/(?<!\*)\*(?!\*)(.*?)\*(?!\*)/g, '<em>$1</em>'); // Italic
+
+    // Blockquotes
+    html = html.replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>');
+
+    // Horizontal rules
+    html = html.replace(/^(-{3,}|\*{3,})$/gm, '<hr>');
+
+    // Images ![alt](src)
+    html = html.replace(/!\[(.*?)\]\((.*?)\)/g, '<img alt="$1" src="$2">');
+
+    // Links [text](url)
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+
+    // Lists
+    // Ordered
+    html = html.replace(/^\d+\. (.*)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
+        const items = match.match(/<li>.*?<\/li>/g);
+        return items ? `<ol>${items.join('')}</ol>` : match;
+    });
+
+    // Unordered
+    html = html.replace(/^[-*+] (.*)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
+        const items = match.match(/<li>.*?<\/li>/g);
+        return items ? `<ul>${items.join('')}</ul>` : match;
+    });
+
+    // Line breaks
+    html = html.replace(/\n/g, '<br>');
+
     return html;
 }
 
